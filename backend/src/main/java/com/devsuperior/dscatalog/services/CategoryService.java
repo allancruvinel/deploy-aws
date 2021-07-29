@@ -3,14 +3,21 @@ package com.devsuperior.dscatalog.services;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import javax.persistence.EntityNotFoundException;
+
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.dao.EmptyResultDataAccessException;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.devsuperior.dscatalog.dto.CategoryDTO;
 import com.devsuperior.dscatalog.entities.Category;
 import com.devsuperior.dscatalog.repositories.CategoryRepository;
-import com.devsuperior.dscatalog.services.exceptions.EntityNotFoundException;
+import com.devsuperior.dscatalog.services.exceptions.DatabaseException;
+import com.devsuperior.dscatalog.services.exceptions.ResourceNotFoundException;
 
 @Service
 public class CategoryService {
@@ -29,10 +36,15 @@ public class CategoryService {
 				.collect(Collectors.toList());
 	}
 	
+	public Page<CategoryDTO> findAllPaged(PageRequest pageRequest) {
+		Page<Category> list = repository.findAll(pageRequest);
+		return list.map(x -> new CategoryDTO(x));
+	}
+	
 	@Transactional(readOnly = true)
 	public CategoryDTO findById(Long id) {
 		var teste = repository.findById(id);
-		Category entity = teste.orElseThrow(() -> new EntityNotFoundException("Objeto não encontrado"));
+		Category entity = teste.orElseThrow(() -> new ResourceNotFoundException("Objeto não encontrado"));
 		return new CategoryDTO(entity);
 	}
 	
@@ -44,4 +56,34 @@ public class CategoryService {
 		return new CategoryDTO(entity);
 		
 	}
+	
+	@Transactional
+	public CategoryDTO update(CategoryDTO item,Long id) {
+		try {
+			Category entity = repository.getOne(id);
+			entity.setName(item.getName());
+			entity = repository.save(entity);
+			return new CategoryDTO(entity);
+		}
+		catch(EntityNotFoundException e) {
+			throw new ResourceNotFoundException("Id not found "+id);
+		}
+		
+		
+	}
+
+	public void delete(Long id) {
+		try {
+		repository.deleteById(id);
+		}
+		catch(EmptyResultDataAccessException e) {
+			throw new ResourceNotFoundException("Id not found "+id);
+		}
+		catch(DataIntegrityViolationException e) {
+			throw new DatabaseException("Integrity Violation");
+		}
+		
+	}
+
+	
 }
