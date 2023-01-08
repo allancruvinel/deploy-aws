@@ -18,13 +18,15 @@ import org.springframework.test.web.servlet.ResultActions;
 
 import com.devsuperior.dscatalog.dto.ProductDTO;
 import com.devsuperior.dscatalog.testes.Factory;
+import com.devsuperior.dscatalog.testes.TokenUtil;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 @SpringBootTest
 @AutoConfigureMockMvc
 @Transactional
 public class ProductResourceIT {
-	
+	@Autowired
+	private TokenUtil tokenUtil;
 	@Autowired
 	private MockMvc mockMvc;
 	
@@ -36,6 +38,9 @@ public class ProductResourceIT {
 	private Long existingId;
 	private Long nomExistingId;
 	private Long countTotalProducts;
+	
+	private String username;
+	private String password;
 
 	@BeforeEach
 	void setUp() {
@@ -43,6 +48,8 @@ public class ProductResourceIT {
 		nomExistingId = 1000L;
 		countTotalProducts = 25L;
 		productDTO = Factory.createProductDTO();
+		username= "maria@gmail.com";
+		password = "123456";
 	}
 	
 	@Test
@@ -63,12 +70,14 @@ public class ProductResourceIT {
 	
 	@Test
 	public void updateShouldReturnProductDtoWhenIdExists() throws Exception{
+		String accessToken = tokenUtil.obtainAccessToken(mockMvc, username, password);
 		String jsonBody = objectMapper.writeValueAsString(productDTO);
 		
 		String expectedName = productDTO.getName();
 		String expectedDescription = productDTO.getDescription();
 		ResultActions result = 
 				mockMvc.perform(put("/products/{id}",existingId)
+						.header("Authorization","Bearer "+accessToken)
 						.content(jsonBody)
 						.contentType(MediaType.APPLICATION_JSON)
 						.accept(MediaType.APPLICATION_JSON)
@@ -83,10 +92,12 @@ public class ProductResourceIT {
 	
 	@Test
 	public void updateShouldReturnNotFoundWhenIdDoesNotExists() throws Exception{
+		String accessToken = tokenUtil.obtainAccessToken(mockMvc, username, password);
 		String jsonBody = objectMapper.writeValueAsString(productDTO);
 
 		ResultActions result = 
 				mockMvc.perform(put("/products/{id}",nomExistingId)
+						.header("Authorization", "Bearer "+accessToken)
 						.content(jsonBody)
 						.contentType(MediaType.APPLICATION_JSON)
 						.accept(MediaType.APPLICATION_JSON)
