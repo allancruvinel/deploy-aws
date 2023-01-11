@@ -40,6 +40,12 @@ public class CategoryResources {
 		return ResponseEntity.ok(dto);
 	}
 	
+	@GetMapping(value = "nada/nada")
+	public ResponseEntity<String> nada(){
+		CategoryDTO dto = null;
+		return ResponseEntity.ok("NovoEndpoint");
+	}
+	
 	@PutMapping(value = "/{id}")
 	public ResponseEntity<CategoryDTO> update(@PathVariable Long id,@Valid @RequestBody CategoryDTO item){
 		item = categoryService.update(item,id);
